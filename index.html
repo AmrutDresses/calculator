@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Item Code Extractor with Quantity, Shipping, and Tiered Discount</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for better aesthetics */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for scrolling content */
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem; /* Increased padding */
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            width: 100%;
+            max-width: 600px; /* Wider container for multiple items */
+            text-align: center;
+            border: 1px solid #e2e8f0; /* Subtle border */
+        }
+        .item-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Space between input and button */
+            margin-bottom: 1.5rem; /* Space between item groups */
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            background-color: #f8fafc; /* Slightly different background for each group */
+        }
+        input[type="text"], input[type="number"] {
+            padding: 0.75rem 1rem; /* Comfortable padding */
+            border: 1px solid #cbd5e1; /* Light gray border */
+            border-radius: 0.5rem; /* Rounded input field */
+            width: 100%; /* Full width */
+            font-size: 1rem;
+            color: #334155; /* Darker text color */
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+        button {
+            background-color: #4f46e5; /* Indigo button */
+            color: white;
+            padding: 0.85rem 1.5rem; /* Generous padding */
+            border-radius: 0.5rem;
+            font-weight: 600; /* Semi-bold text */
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); /* Button shadow */
+            border: none;
+            width: auto; /* Auto width for specific buttons */
+            font-size: 1.05rem;
+            display: inline-flex; /* For center alignment if needed */
+            justify-content: center;
+            align-items: center;
+        }
+        button:hover {
+            background-color: #4338ca; /* Darker indigo on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        .add-item-button {
+            background-color: #10b981; /* Green for add button */
+            margin-top: 1rem;
+            width: 100%; /* Full width for add button */
+        }
+        .add-item-button:hover {
+            background-color: #059669;
+        }
+        .extract-all-button {
+            background-color: #f97316; /* Orange for extract all */
+            margin-top: 1.5rem;
+            width: 100%;
+        }
+        .extract-all-button:hover {
+            background-color: #ea580c;
+        }
+        .result-section {
+            margin-top: 1rem; /* Space above results */
+            text-align: left;
+            border-top: 1px dashed #e2e8f0; /* Dashed separator */
+            padding-top: 1rem;
+        }
+        .result-item {
+            margin-bottom: 0.5rem; /* Space between result items */
+            font-size: 1rem;
+            color: #475569; /* Slightly darker text for results */
+        }
+        .result-item strong {
+            color: #1e293b; /* Even darker for labels */
+        }
+        .error-message {
+            color: #ef4444; /* Red for error messages */
+            margin-top: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .delete-button {
+            background-color: #ef4444; /* Red for delete button */
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            margin-left: auto; /* Push to the right */
+            box-shadow: none; /* No shadow for small button */
+            align-self: flex-end; /* Align delete button to the right within its group */
+            margin-top: -0.5rem; /* Pull up a bit */
+            margin-bottom: 0.5rem;
+        }
+        .delete-button:hover {
+            background-color: #dc2626;
+            transform: none;
+        }
+        .input-row {
+            display: flex;
+            gap: 1rem; /* Space between item code and quantity input */
+            align-items: center;
+        }
+        .input-row input {
+            flex: 1; /* Allow inputs to grow */
+        }
+        .input-row label {
+            white-space: nowrap; /* Prevent label from wrapping */
+            font-size: 0.95rem;
+            color: #475569;
+        }
+        .summary-section {
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #6366f1; /* Stronger separator for summary */
+            text-align: left;
+        }
+        .summary-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+        .summary-section h3 { /* Hidden now, but kept for potential future use */
+            display: none; /* Hide the sub-heading for warehouse shipping */
+        }
+        .summary-item {
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+        .grand-total {
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #059669; /* Green for grand total */
+            padding-top: 1rem;
+            border-top: 1px dashed #94a3b8;
+        }
+        .discount-item {
+            color: #dc2626; /* Red for discount */
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Multi-Item Code Extractor with Quantity, Shipping, and Tiered Discount</h1>
+        <p class="text-gray-600 mb-8">Enter item codes and quantities to extract details, calculate totals, shipping costs grouped by warehouse, and apply tiered discounts.</p>
+
+        <div id="itemCodeInputsContainer">
+            <!-- Initial item code input group -->
+            <div class="item-input-group" id="itemGroup-0">
+                <button class="delete-button hidden" onclick="deleteItemGroup('itemGroup-0')">Delete</button>
+                <div class="input-row">
+                    <input type="text" class="item-code-input" placeholder="Enter item code (e.g., A1250720020200)" maxlength="14">
+                    <label for="quantity-0">Qty:</label>
+                    <input type="number" id="quantity-0" class="item-quantity-input" value="1" min="1" step="1">
+                </div>
+                <div class="error-message hidden" id="errorMessage-0"></div>
+                <div class="result-section hidden" id="results-0">
+                    <div class="result-item"><strong>Warehouse:</strong> <span class="warehouse-display-name"></span></div>
+                    <div class="result-item"><strong>Basic Cost (per unit):</strong> <span class="basic-cost-per-unit"></span></div>
+                    <div class="result-item"><strong>MOQ (Minimum Order Quantity):</strong> <span class="moq"></span></div>
+                    <div class="result-item mt-2"><strong>Total Cost:</strong> <span class="total-cost font-semibold text-indigo-700"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <button class="add-item-button" onclick="addItemCodeInput()">Add Another Item Code</button>
+        <button class="extract-all-button" onclick="extractAllDetails()">Extract All Details</button>
+
+        <div id="overallSummary" class="summary-section hidden">
+            <h2>Order Summary</h2>
+            <div class="summary-item"><strong>Total Item Cost:</strong> <span id="overallItemCost">Rs 0.00</span></div>
+            <!-- Total Shipping Charges will be displayed here -->
+            <div class="summary-item"><strong>Total Shipping Charges:</strong> <span id="totalShippingChargesValue">Rs 0.00</span></div>
+            <div id="warehouseShippingSummary" style="display: none;">
+                <!-- This section is now hidden and its content is not used for display -->
+                <h3>Shipping Costs by Warehouse</h3>
+            </div>
+            <div class="summary-item discount-item"><strong>Total Discount:</strong> <span id="totalDiscountValue">Rs 0.00</span></div>
+            <div class="grand-total">
+                <strong>Grand Total Payable:</strong> <span id="grandTotalPayableValue">Rs 0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let itemGroupCount = 0; // To keep track of unique IDs for item groups
+
+        // Define the tiered discount chart for the *per-quantity discount rate*.
+        // Key = total quantity of eligible items threshold, Value = discount amount *per quantity* (in Rs).
+        // The object should be ordered from lowest quantity to highest for clarity,
+        // but the lookup function will handle any order.
+        const discountChartPerQty = {
+            1: 5,
+            2: 10,
+            3: 15,
+            4: 20,
+            5: 25,
+            6: 30,
+            7: 35,
+            8: 40,
+            9: 44,
+            10: 47,
+            11: 50,
+        };
+
+        /**
+         * Adds a new item code input group to the container.
+         * Each group includes an input field, a quantity input, an error message area, and a results display area.
+         */
+        function addItemCodeInput() {
+            itemGroupCount++;
+            const container = document.getElementById('itemCodeInputsContainer');
+
+            const newItemGroup = document.createElement('div');
+            newItemGroup.className = 'item-input-group';
+            newItemGroup.id = `itemGroup-${itemGroupCount}`;
+
+            newItemGroup.innerHTML = `
+                <button class="delete-button" onclick="deleteItemGroup('itemGroup-${itemGroupCount}')">Delete</button>
+                <div class="input-row">
+                    <input type="text" class="item-code-input" placeholder="Enter item code (e.g., A1250720020200)" maxlength="14">
+                    <label for="quantity-${itemGroupCount}">Qty:</label>
+                    <input type="number" id="quantity-${itemGroupCount}" class="item-quantity-input" value="1" min="1" step="1">
+                </div>
+                <div class="error-message hidden" id="errorMessage-${itemGroupCount}"></div>
+                <div class="result-section hidden" id="results-${itemGroupCount}">
+                    <div class="result-item"><strong>Warehouse:</strong> <span class="warehouse-display-name"></span></div>
+                    <div class="result-item"><strong>Basic Cost (per unit):</strong> <span class="basic-cost-per-unit"></span></div>
+                    <div class="result-item"><strong>MOQ (Minimum Order Quantity):</strong> <span class="moq"></span></div>
+                    <div class="result-item mt-2"><strong>Total Cost:</strong> <span class="total-cost font-semibold text-indigo-700"></span></div>
+                </div>
+            `;
+            container.appendChild(newItemGroup);
+
+            // Show delete button for the first item if more than one item exists
+            if (document.querySelectorAll('.item-input-group').length > 1) {
+                document.getElementById('itemGroup-0').querySelector('.delete-button').classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Deletes an item code input group from the DOM.
+         * @param {string} groupId - The ID of the item group to delete.
+         */
+        function deleteItemGroup(groupId) {
+            const itemGroupToDelete = document.getElementById(groupId);
+            if (itemGroupToDelete) {
+                itemGroupToDelete.remove();
+            }
+
+            // If only one item group remains (the original one), hide its delete button
+            const remainingGroups = document.querySelectorAll('.item-input-group');
+            if (remainingGroups.length === 1 && remainingGroups[0].id === 'itemGroup-0') {
+                remainingGroups[0].querySelector('.delete-button').classList.add('hidden');
+            }
+            // Re-run extraction to update summary and totals if items are deleted
+            extractAllDetails();
+        }
+
+        /**
+         * Calculates the shipping cost based on total weight.
+         * @param {number} totalWeightKg - The total weight in kilograms.
+         * @returns {number} The calculated shipping cost in Rs.
+         */
+        function calculateShippingCost(totalWeightKg) {
+            if (totalWeightKg <= 0) {
+                return 0; // No shipping cost for zero or negative weight
+            }
+
+            const firstBlockCost = 80; // Cost for the first 500g (0.5 kg)
+            const additionalBlockCost = 40; // Cost for each additional 500g (0.5 kg)
+
+            if (totalWeightKg <= 0.5) {
+                return firstBlockCost;
+            } else {
+                const additionalWeight = totalWeightKg - 0.5;
+                // Calculate how many 500g blocks are in the additional weight, rounding up
+                const additionalBlocks = Math.ceil(additionalWeight / 0.5);
+                return firstBlockCost + (additionalBlocks * additionalBlockCost);
+            }
+        }
+
+        /**
+         * Determines the discount amount per quantity based on the total order quantity.
+         * @param {number} totalQty - The sum of all quantities in the order.
+         * @returns {number} The discount amount per quantity (Rs).
+         */
+        function getDiscountPerQuantity(totalQty) {
+            let discountRate = 0;
+            // Get keys (quantity thresholds) from the discount chart and sort them numerically
+            const sortedKeys = Object.keys(discountChartPerQty).map(Number).sort((a, b) => a - b);
+
+            // Iterate from the highest threshold downwards to find the applicable rate
+            for (let i = sortedKeys.length - 1; i >= 0; i--) {
+                const threshold = sortedKeys[i];
+                if (totalQty >= threshold) {
+                    discountRate = discountChartPerQty[threshold];
+                    break; // Found the highest applicable threshold
+                }
+            }
+            return discountRate;
+        }
+
+
+        /**
+         * Extracts details for all item codes currently in the input fields,
+         * aggregates weights by warehouse, calculates shipping costs per warehouse,
+         * and applies tiered discounts based on total quantity.
+         */
+        function extractAllDetails() {
+            const itemGroups = document.querySelectorAll('.item-input-group');
+            const warehouseWeights = {}; // Stores total weight per warehouse: { "A125": 0.8, "A133": 0.4 }
+            const warehouseDisplayNames = {}; // Stores mapping from actual warehouse code to display name (e.g., A125 -> Warehouse 1)
+            let nextWarehouseDisplayNumber = 1;
+
+            let grandTotalShipping = 0; // This will now hold the sum of all warehouse shipping costs
+            let totalOrderQuantity = 0; // To sum up all quantities for discount calculation
+            let overallItemCost = 0; // To sum up total costs of all items before discount
+
+            // Hide and clear previous summary sections
+            document.getElementById('overallSummary').classList.add('hidden');
+            // We are hiding the warehouseShippingSummary div entirely now
+            document.getElementById('warehouseShippingSummary').style.display = 'none';
+            document.getElementById('warehouseShippingSummary').innerHTML = '<h3>Shipping Costs by Warehouse</h3>'; // Clear content for good measure
+
+            itemGroups.forEach((itemGroup) => {
+                const inputElement = itemGroup.querySelector('.item-code-input');
+                const quantityElement = itemGroup.querySelector('.item-quantity-input');
+                const idSuffix = itemGroup.id.split('-')[1];
+
+                const errorMessageDiv = document.getElementById(`errorMessage-${idSuffix}`);
+                const resultsDiv = itemGroup.querySelector('.result-section'); // Get the resultsDiv for this specific item group
+
+                // Clear previous error and results for this specific item
+                errorMessageDiv.classList.add('hidden');
+                resultsDiv.classList.add('hidden');
+
+                const itemCode = inputElement.value.trim();
+                let quantity = parseInt(quantityElement.value, 10); // Use 'let' as quantity might be updated
+
+                // --- Input Validations ---
+                if (itemCode.length === 0) {
+                    errorMessageDiv.textContent = 'Please enter an item code.';
+                    errorMessageDiv.classList.remove('hidden');
+                    return; // Skip this item if code is empty
+                }
+                if (itemCode.length !== 14) {
+                    errorMessageDiv.textContent = 'Error: Item code must be exactly 14 characters long.';
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                const numericPart = itemCode.substring(4);
+                if (isNaN(numericPart)) {
+                    errorMessageDiv.textContent = 'Error: The cost, MOQ, and weight parts must be numeric.';
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                if (isNaN(quantity) || quantity <= 0) {
+                    errorMessageDiv.textContent = 'Error: Quantity must be a positive number.';
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
+                }
+
+                try {
+                    // Extracting parts based on the specified format
+                    const warehouseCode = itemCode.substring(0, 4); // First 4 characters
+                    const basicCostDoubled = parseInt(itemCode.substring(4, 8), 10); // Next 4 characters
+                    const moq = parseInt(itemCode.substring(8, 10), 10); // Next 2 characters
+                    const weightGrams = parseInt(itemCode.substring(10, 14), 10); // Last 4 characters
+
+                    // Set quantity to MOQ if MOQ is greater than current quantity or if current quantity is invalid/zero
+                    // Also ensure MOQ is at least 1 if it's extracted as 0, to match min="1"
+                    if (moq > 0 && (isNaN(quantity) || quantity < moq)) {
+                        quantity = moq;
+                        quantityElement.value = moq; // Update the input field
+                    } else if (moq === 0 && (isNaN(quantity) || quantity < 1)) {
+                        quantity = 1; // Default to 1 if MOQ is 0
+                        quantityElement.value = 1; // Update the input field
+                    }
+
+                    // Assign a display name to the warehouse if not already assigned
+                    if (!warehouseDisplayNames[warehouseCode]) {
+                        warehouseDisplayNames[warehouseCode] = `Warehouse ${nextWarehouseDisplayNumber}`;
+                        nextWarehouseDisplayNumber++;
+                    }
+                    const currentWarehouseDisplayName = warehouseDisplayNames[warehouseCode];
+
+
+                    // Perform calculations for individual item
+                    const basicCostPerUnit = basicCostDoubled / 2;
+                    const weightPerUnitKg = weightGrams / 1000; // Convert grams to kilograms
+
+                    const totalCost = basicCostPerUnit * quantity;
+                    const totalWeightForItem = weightPerUnitKg * quantity; // Total weight for this specific item
+
+                    // Aggregate for overall calculations
+                    totalOrderQuantity += quantity;
+                    overallItemCost += totalCost;
+
+                    // Aggregate total weight by warehouse
+                    if (!warehouseWeights[warehouseCode]) {
+                        warehouseWeights[warehouseCode] = 0;
+                    }
+                    warehouseWeights[warehouseCode] += totalWeightForItem;
+
+
+                    // Display the extracted details for this specific item
+                    resultsDiv.querySelector('.warehouse-display-name').textContent = currentWarehouseDisplayName; // Use display name
+                    resultsDiv.querySelector('.basic-cost-per-unit').textContent = `$${basicCostPerUnit.toFixed(2)}`;
+                    resultsDiv.querySelector('.moq').textContent = `${moq} units`;
+                    resultsDiv.querySelector('.total-cost').textContent = `$${totalCost.toFixed(2)}`;
+
+                    resultsDiv.classList.remove('hidden'); // Show the results section for this item
+
+                } catch (error) {
+                    // Catch any unexpected errors during parsing
+                    errorMessageDiv.textContent = 'An unexpected error occurred. Please check the item code format.';
+                    errorMessageDiv.classList.remove('hidden');
+                    console.error(`Extraction error for item ${itemCode}:`, error);
+                }
+            });
+
+            // --- Calculate and Display Overall Summary ---
+            const overallSummaryDiv = document.getElementById('overallSummary');
+            const overallItemCostSpan = document.getElementById('overallItemCost');
+            const totalShippingChargesValueSpan = document.getElementById('totalShippingChargesValue'); // New span for total shipping
+            const totalDiscountValueSpan = document.getElementById('totalDiscountValue');
+            const grandTotalPayableValueSpan = document.getElementById('grandTotalPayableValue');
+
+            // Calculate shipping costs per warehouse and sum them up for grandTotalShipping
+            for (const warehouseCode in warehouseWeights) {
+                if (warehouseWeights.hasOwnProperty(warehouseCode)) {
+                    const totalWeightForWarehouse = warehouseWeights[warehouseCode];
+                    const shippingCostForWarehouse = calculateShippingCost(totalWeightForWarehouse);
+                    grandTotalShipping += shippingCostForWarehouse;
+                }
+            }
+
+            // Calculate total discount
+            const discountPerQuantity = getDiscountPerQuantity(totalOrderQuantity);
+            const totalDiscount = discountPerQuantity * totalOrderQuantity;
+
+            // Calculate Grand Total Payable
+            const grandTotalPayable = overallItemCost - totalDiscount + grandTotalShipping;
+
+            // Display overall summary if there's at least one valid item processed
+            if (Object.keys(warehouseWeights).length > 0 || totalOrderQuantity > 0) {
+                overallSummaryDiv.classList.remove('hidden');
+                overallItemCostSpan.textContent = `Rs ${overallItemCost.toFixed(2)}`;
+                totalShippingChargesValueSpan.textContent = `Rs ${grandTotalShipping.toFixed(2)}`; // Display total shipping
+                totalDiscountValueSpan.textContent = `Rs ${totalDiscount.toFixed(2)}`;
+                grandTotalPayableValueSpan.textContent = `Rs ${grandTotalPayable.toFixed(2)}`;
+            } else {
+                // If no valid items, ensure the summary section is hidden
+                overallSummaryDiv.classList.add('hidden');
+            }
+        }
+
+        // Initial check to hide delete button if only one item exists on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialGroup = document.getElementById('itemGroup-0');
+            if (initialGroup) {
+                initialGroup.querySelector('.delete-button').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
